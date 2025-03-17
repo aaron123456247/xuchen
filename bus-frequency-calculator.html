@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>公交发车频率计算</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: inline-block;
+            width: 120px;
+            text-align: right;
+            margin-right: 10px;
+        }
+        input[type="number"] {
+            width: 100px;
+            padding: 5px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <h1>公交发车频率计算</h1>
+    
+    <div class="input-group">
+        <label for="average-speed">平均车速 (km/h):</label>
+        <input type="number" id="average-speed" value="30" min="1">
+    </div>
+    
+    <div class="input-group">
+        <label for="max-passengers">车辆最大载客量 (人):</label>
+        <input type="number" id="max-passengers" value="50" min="1">
+    </div>
+    
+    <button onclick="calculateFrequency()">计算发车频率</button>
+    
+    <table id="bus-stops">
+        <thead>
+            <tr>
+                <th>站点号</th>
+                <th>与下站距离 (km)</th>
+                <th>6:00-7:00 客流量</th>
+                <th>7:00-8:00 客流量</th>
+                <th>8:00-9:00 客流量</th>
+                <th>9:00-10:00 客流量</th>
+                <th>10:00-11:00 客流量</th>
+                <th>总客流 (人)</th>
+                <th>发车频率 (次/小时)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td><input type="number" value="2" min="0" step="0.1"></td>
+                <td><input type="number" value="50" min="0"></td>
+                <td><input type="number" value="136" min="0"></td>
+                <td><input type="number" value="245" min="0"></td>
+                <td><input type="number" value="250" min="0"></td>
+                <td><input type="number" value="95" min="0"></td>
+                <td>776</td>
+                <td id="frequency1">-</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td><input type="number" value="1" min="0" step="0.1"></td>
+                <td><input type="number" value="100" min="0"></td>
+                <td><input type="number" value="510" min="0"></td>
+                <td><input type="number" value="310" min="0"></td>
+                <td><input type="number" value="208" min="0"></td>
+                <td><input type="number" value="122" min="0"></td>
+                <td>1250</td>
+                <td id="frequency2">-</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td><input type="number" value="1.5" min="0" step="0.1"></td>
+                <td><input type="number" value="400" min="0"></td>
+                <td><input type="number" value="420" min="0"></td>
+                <td><input type="number" value="400" min="0"></td>
+                <td><input type="number" value="320" min="0"></td>
+                <td><input type="number" value="200" min="0"></td>
+                <td>1740</td>
+                <td id="frequency3">-</td>
+            </tr>
+            <tr>
+                <td>4</td>
+                <td><input type="number" value="3" min="0" step="0.1"></td>
+                <td><input type="number" value="135" min="0"></td>
+                <td><input type="number" value="335" min="0"></td>
+                <td><input type="number" value="350" min="0"></td>
+                <td><input type="number" value="166" min="0"></td>
+                <td><input type="number" value="220" min="0"></td>
+                <td>1206</td>
+                <td id="frequency4">-</td>
+            </tr>
+            <tr>
+                <td>5</td>
+                <td><input type="number" value="2.5" min="0" step="0.1"></td>
+                <td><input type="number" value="32" min="0"></td>
+                <td><input type="number" value="2210" min="0"></td>
+                <td><input type="number" value="300" min="0"></td>
+                <td><input type="number" value="78" min="0"></td>
+                <td><input type="number" value="105" min="0"></td>
+                <td>725</td>
+                <td id="frequency5">-</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div class="result" id="result">
+        <!-- 计算结果显示在这里 -->
+    </div>
+    
+    <script>
+        function calculateFrequency() {
+            const averageSpeed = parseFloat(document.getElementById('average-speed').value);
+            const maxPassengers = parseInt(document.getElementById('max-passengers').value);
+            
+            const rows = document.querySelectorAll('#bus-stops tbody tr');
+            let totalFrequency = 0;
+            
+            rows.forEach(row => {
+                const distanceInput = row.cells[1].querySelector('input');
+                const distance = parseFloat(distanceInput.value);
+                
+                // 计算行驶时间（小时）
+                const travelTime = distance / averageSpeed;
+                
+                // 获取各时间段的客流量
+                const hour1 = parseInt(row.cells[2].querySelector('input').value);
+                const hour2 = parseInt(row.cells[3].querySelector('input').value);
+                const hour3 = parseInt(row.cells[4].querySelector('input').value);
+                const hour4 = parseInt(row.cells[5].querySelector('input').value);
+                const hour5 = parseInt(row.cells[6].querySelector('input').value);
+                
+                // 计算每小时的发车频率
+                const frequencies = [];
+                for (let i = 0; i < 5; i++) {
+                    const passengers = [hour1, hour2, hour3, hour4, hour5][i];
+                    // 每小时需要的班次 = 客流量 / 载客量
+                    const frequency = passengers / maxPassengers;
+                    frequencies.push(frequency.toFixed(2));
+                }
+                
+                // 更新表格中的发车频率
+                const frequencyCell = row.cells[8];
+                frequencyCell.textContent = frequencies.join(', ');
+                
+                // 计算总频率（简单平均）
+                const totalFreq = frequencies.reduce((a, b) => a + parseFloat(b), 0) / frequencies.length;
+                totalFrequency += totalFreq;
+            });
+            
+            // 显示总频率结果
+            document.getElementById('result').innerHTML = `
+                <h3>总发车频率计算结果</h3>
+                <p>平均车速: ${averageSpeed} km/h</p>
+                <p>车辆最大载客量: ${maxPassengers} 人</p>
+                <p>所有站点的平均发车频率: ${(totalFrequency / rows.length).toFixed(2)} 次/小时</p>
+            `;
+        }
+    </script>
+</body>
+</html>
